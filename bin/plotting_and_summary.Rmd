@@ -1,0 +1,92 @@
+---
+title: "Allstate Kaggle"
+author: "Alex Kroeger"
+date: "October 12, 2016"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+## Clear
+rm(list=ls())
+
+
+## libs on libs
+library(randomForest)
+library(data.table)
+library(FeatureHashing)
+library(Matrix)
+library(ggplot2)
+library(GGally)
+library(gridExtra)
+library(corrplot)
+library(e1071)
+```
+
+
+```{r readin, include=FALSE}
+## Read in training dataset
+train <- fread("../data/train.csv")
+names(train)
+
+cat_var <- names(train)[which(sapply(train, is.character))]
+num_var <- names(train)[which(sapply(train, is.numeric))]
+num_var <- setdiff(num_var, c("id", "loss"))
+
+train_cat <- train[,.SD, .SDcols = cat_var]
+train_num <- train[,.SD,.SDcols = num_var]
+
+
+plotBox <- function(data_in, i, lab) {
+  data <- data.frame(x=data_in[[i]], y=lab)
+  p <- ggplot(data=data, aes(x=x, y=y)) +geom_boxplot()+ xlab(colnames(data_in)[i]) + theme_light() + 
+    ylab("log(loss)") + theme(axis.text.x = element_text(angle = 90, hjust =1))
+  return (p)
+}
+
+plotDen <- function(data_in, i, lab){
+  data <- data.frame(x=data_in[[i]], y=lab)
+  p <- ggplot(data= data) + geom_density(aes(x = x), size = 1,alpha = 1.0) +
+    xlab(paste0((colnames(data_in)[i]), '\n', 'Skewness: ',round(skewness(data_in[[i]], na.rm = TRUE), 2))) +
+    theme_light() 
+  return(p)
+}
+
+doPlots <- function(data_in, fun, ii, lab, ncol=3) {
+  pp <- list()
+  for (i in ii) {
+    p <- fun(data_in=data_in, i=i, lab=lab)
+    pp <- c(pp, list(p))
+  }
+  do.call("grid.arrange", c(pp, ncol=ncol))
+}
+```
+
+## Categorical Plots
+
+```{r categorical_plots}
+doPlots(train_cat, fun = plotBox, ii =1:12, lab=log(train$loss), ncol = 3)
+doPlots(train_cat, fun = plotBox, ii =13:24, lab=log(train$loss), ncol = 3)
+doPlots(train_cat, fun = plotBox, ii =25:36, lab=log(train$loss), ncol = 3)
+doPlots(train_cat, fun = plotBox, ii =37:48, lab=log(train$loss), ncol = 3)
+doPlots(train_cat, fun = plotBox, ii =49:60, lab=log(train$loss), ncol = 3)
+doPlots(train_cat, fun = plotBox, ii =61:72, lab=log(train$loss), ncol = 3)
+doPlots(train_cat, fun = plotBox, ii =73:84, lab=log(train$loss), ncol = 3)
+doPlots(train_cat, fun = plotBox, ii =85:96, lab=log(train$loss), ncol = 3)
+doPlots(train_cat, fun = plotBox, ii =97:108, lab=log(train$loss), ncol = 3)
+doPlots(train_cat, fun = plotBox, ii =109:116, lab=log(train$loss), ncol = 3)
+```
+
+## Density Plots
+
+```{r density_plots}
+doPlots(train_num, fun = plotDen, ii =1:6, lab=log(train$loss), ncol = 3)
+doPlots(train_num, fun = plotDen, ii =7:14, lab=log(train$loss), ncol = 3)
+```
+
+## Correlations
+
+```{r correlations}
+correlations <- cor(train_num)
+corrplot(correlations, method="square", order="hclust")
+```
