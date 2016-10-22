@@ -13,7 +13,7 @@ train <- fread("../data/train.csv")
 names(train)
 submission_file <- "../sample_submission.csv"
 
-## Convert character to freakin' factor variables
+## Convert character to factor variables
 # list of character vars
 cat_var <- names(train)[which(sapply(train, is.character))]
 train[,(cat_var):=lapply(.SD, as.factor),.SDcols=cat_var]
@@ -22,7 +22,7 @@ cont_var <- names(train)[which(sapply(train,is.numeric))]
 rm(cat_var,cont_var)
 
 ## Uncomment for random sample
-#sample <- sample(1:nrow(train),500)
+#sample <- sample(1:nrow(train),100)
 #train <- train[sample,]
 
 ## Run boosting model
@@ -30,7 +30,9 @@ rm(cat_var,cont_var)
 gbmcv <- function(list) {
   shrink=list[[1]]
   depth=list[[2]]
-  gbm.model <- gbm(loss~.-id,data=train,shrinkage=shrink,distribution="gaussian",n.trees=5000,cv.folds=10,interaction.depth=depth)
+  gbm.model <- gbm(loss~.-id,data=train,shrinkage=shrink,
+                   distribution="gaussian",n.trees=5000,
+                   cv.folds=10,interaction.depth=depth,n.cores=4)
   c(shrink,depth,min(gbm.model$cv.error),which.min(gbm.model$cv.error))
 } 
 
@@ -43,7 +45,6 @@ depths <- rep(seq(1,num_depths,1),length(shrink.params)/num_depths)
 params <- cbind(shrink.params,depths)
 list <- split(params,seq(nrow(params)))
 
-#result = apply(X=params,MARGIN=1,FUN=gbmcv)
 result = sapply(list,gbmcv)
 result = t(result)
 
@@ -52,7 +53,7 @@ best.depth = result[which.min(result[,3]),2]
 
 gbm.model <- gbm(loss~.-id,data=train,shrinkage=best.shrink,
                  distribution="gaussian",n.trees=10000,
-                 cv.folds=10,interaction.depth=best.depth)
+                 cv.folds=10,interaction.depth=best.depth,n.cores=4)
 
 best.ntree <- which.min(gbm.model$cv.error)
 
