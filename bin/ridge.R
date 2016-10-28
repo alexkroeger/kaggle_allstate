@@ -25,7 +25,9 @@ rm(test,train)
 
 ## Matrix for regression
 X <- model.matrix(loss~.-id-test,data)
-Y <- data$loss[trainset]
+
+## Take log of loss
+Y <- log(data$loss[trainset])
 
 # get rid of original training set to save space
 rm(data)
