@@ -41,6 +41,7 @@ opt.lambda = fit.ridge$lambda.min
 X.test <- X[testset,]
 rm(X)
 yhat <- predict(fit.ridge,s=opt.lambda,newx=X.test)
+yhat <- exp(yhat)
 
 ## Fill in submission template
 submission_file <- "../sample_submission.csv"
