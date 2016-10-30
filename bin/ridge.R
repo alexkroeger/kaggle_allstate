@@ -10,8 +10,8 @@ train <- fread("../data/train.csv")
 test <- fread("../data/test.csv")
 
 ## Uncomment for random sample
-#sample <- sample(1:nrow(train),50000)
-#train <- train[sample,]
+sample <- sample(1:nrow(train),50000)
+train <- train[sample,]
 
 test$loss <- 0
 test$test <- 1
@@ -27,7 +27,7 @@ rm(test,train)
 X <- model.matrix(loss~.-id-test,data)
 
 ## Take log of loss
-Y <- log(data$loss[trainset])
+Y <- log(data$loss[trainset]+200)
 
 # get rid of original training set to save space
 rm(data)
@@ -41,7 +41,7 @@ opt.lambda = fit.ridge$lambda.min
 X.test <- X[testset,]
 rm(X)
 yhat <- predict(fit.ridge,s=opt.lambda,newx=X.test)
-yhat <- exp(yhat)
+yhat <- exp(yhat)-200
 
 ## Fill in submission template
 submission_file <- "../sample_submission.csv"

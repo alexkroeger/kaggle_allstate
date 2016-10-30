@@ -52,6 +52,18 @@ plotDen <- function(data_in, i, lab){
   return(p)
 }
 
+plotScatter <- function(data_in, i, lab){
+  data <- data.frame(x=data_in[[i]], y=lab)
+  p <- ggplot(data,aes(x,y)) + geom_point(shape=19,alpha=1/5) + geom_smooth(method='lm')
+  return(p)
+}
+
+plotScatterloess <- function(data_in, i, lab) {
+  data <- data.frame(x=data_in[[i]], y=lab)
+  p <- ggplot(data,aes(x,y)) + geom_point(shape=19,alpha=1/5) + geom_smooth()
+  return(p)
+}
+
 doPlots <- function(data_in, fun, ii, lab, ncol=3) {
   pp <- list()
   for (i in ii) {
