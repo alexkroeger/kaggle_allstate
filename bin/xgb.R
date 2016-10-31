@@ -10,8 +10,8 @@ train <- fread("../data/train.csv")
 test <- fread("../data/test.csv")
 
 ## Uncomment for random sample
-sample <- sample(1:nrow(train),70000)
-train <- train[sample,]
+#sample <- sample(1:nrow(train),70000)
+#train <- train[sample,]
 
 
 ## response = loss
@@ -65,11 +65,14 @@ xgb.model <- xgb.cv(params,
                     feval=eval_mae,
                     maximize=FALSE)
 
-best_n <- which(xgb.model$test.error.mean==min(xgb.model$test.error.mean))
+## to avoid overfitting, use lowest CV within 0.1 sd's of the minimum
+min.index <- which(xgb.model$test.error.mean==min(xgb.model$test.error.mean))
+min.sd <- xgb.model$test.error.mean[min.index]+(0.1*xgb.model$test.error.std[min.index])
+best.n <- min(which(xgb.model$test.error.mean<min.sd))
 
 opt.model <- xgb.train(params,
                        dx,
-                       nrounds=best_n)
+                       nrounds=best.n)
 
 ## Predict for test set
 yhat <- predict(opt.model,dtest)
