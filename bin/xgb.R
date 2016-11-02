@@ -1,17 +1,19 @@
-## Clear
+
+# ## Clear
 rm(list=ls())
 
 ## libs on libs
 library(data.table)
 library(xgboost)
+library(caret)
 
 ## Read in data
 train <- fread("../data/train.csv")
 test <- fread("../data/test.csv")
 
 ## Uncomment for random sample
-#sample <- sample(1:nrow(train),70000)
-#train <- train[sample,]
+sample <- sample(1:nrow(train),70000)
+train <- train[sample,]
 
 
 ## response = loss
@@ -44,7 +46,6 @@ test <- data[(trainset+1):nrow(data),]
 dx <-xgb.DMatrix(as.matrix(x),label=y)
 dtest <- xgb.DMatrix(as.matrix(test))
 
-#save(dtest,file='../data/dtest')
 
 eval_mae <- function (yhat,dx) {
   y = getinfo(dx, "label")
@@ -52,27 +53,47 @@ eval_mae <- function (yhat,dx) {
   return(list(metric="error",value=error))
 }
 
-## list of xgb parameters
-params <- list(objective='reg:linear',
-               max_depth=6)
+xgb_grid = expand.grid(
+  eta = seq(0.01, 0.4, 0.04),
+  max_depth = c(4, 5, 6)
+)
 
-## Train the model
-xgb.model <- xgb.cv(params,
-                    data=dx,
-                    nrounds=1000,
-                    nfold=10,
-                    early.stop.round = 20,
-                    feval=eval_mae,
-                    maximize=FALSE)
 
-## to avoid overfitting, use lowest CV within 0.1 sd's of the minimum
-min.index <- which(xgb.model$test.error.mean==min(xgb.model$test.error.mean))
-min.sd <- xgb.model$test.error.mean[min.index]+(0.1*xgb.model$test.error.std[min.index])
-best.n <- min(which(xgb.model$test.error.mean<min.sd))
+maeParams <- apply(xgb_grid,1,function(params) {
+  etaparam <- params[["eta"]]
+  maxdepparam <- params[["max_depth"]]
+  
+  ## Train the model
+  xgb.model <- xgb.cv(data=dx,
+                      eta=etaparam,
+                      max_depth=maxdepparam,
+                      objective='reg:linear',
+                      nrounds=1000,
+                      nfold=10,
+                      early.stop.round = 20,
+                      feval=eval_mae,
+                      maximize=FALSE)
+  
+  ## to avoid overfitting, use lowest CV within x sd's of the minimum
+  x = 0
+  min.index <- which(xgb.model$test.error.mean==min(xgb.model$test.error.mean))
+  test.cv <- xgb.model$test.error.mean[min.index]+(x*xgb.model$test.error.std[min.index])
+  best.n <- min(which(xgb.model$test.error.mean<=test.cv))
+  
+  return(c(test.cv, best.n, maxdepparam, etaparam))
+})
 
-opt.model <- xgb.train(params,
-                       dx,
-                       nrounds=best.n)
+## find model with best params
+index <- which(maeParams[1,]==min(maeParams[1,]))
+opt.n <- maeParams[2,index]
+opt.maxdep <- maeParams[3,index]
+opt.eta <- maeParams[4,index]
+
+opt.model <- xgb.train(data=dx,
+                       eta=opt.eta,
+                       max_depth=opt.maxdep,
+                       objective='reg:linear',
+                       nrounds=opt.n)
 
 ## Predict for test set
 yhat <- predict(opt.model,dtest)
