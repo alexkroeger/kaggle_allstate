@@ -12,8 +12,8 @@ train <- fread("../data/train.csv")
 test <- fread("../data/test.csv")
 
 ## Uncomment for random sample
-sample <- sample(1:nrow(train),70000)
-train <- train[sample,]
+#sample <- sample(1:nrow(train),70000)
+#train <- train[sample,]
 
 
 ## response = loss
@@ -54,8 +54,8 @@ eval_mae <- function (yhat,dx) {
 }
 
 xgb_grid = expand.grid(
-  eta = seq(0.01, 0.4, 0.04),
-  max_depth = c(4, 5, 6)
+  eta = seq(0.01, 0.1, 0.01),
+  max_depth = c(5, 6, 7)
 )
 
 
@@ -68,7 +68,7 @@ maeParams <- apply(xgb_grid,1,function(params) {
                       eta=etaparam,
                       max_depth=maxdepparam,
                       objective='reg:linear',
-                      nrounds=1000,
+                      nrounds=2000,
                       nfold=10,
                       early.stop.round = 20,
                       feval=eval_mae,
