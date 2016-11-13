@@ -1,18 +1,21 @@
 
-# ## Clear
+## Clear
 rm(list=ls())
 
 ## libs on libs
+library(parallel)
+library(parallelsugar)
 library(data.table)
 library(xgboost)
-library(caret)
+
+starttime <- proc.time()
 
 ## Read in data
 train <- fread("../data/train.csv")
 test <- fread("../data/test.csv")
 
 ## Uncomment for random sample
-#sample <- sample(1:nrow(train),70000)
+#sample <- sample(1:nrow(train),1500)
 #train <- train[sample,]
 
 
@@ -44,8 +47,12 @@ x <- data[1:trainset,]
 test <- data[(trainset+1):nrow(data),]
 
 dx <-xgb.DMatrix(as.matrix(x),label=y)
-dtest <- xgb.DMatrix(as.matrix(test))
 
+save(test,file='../data/test')
+
+# Free up mem
+rm(test,data)
+gc()
 
 eval_mae <- function (yhat,dx) {
   y = getinfo(dx, "label")
@@ -59,16 +66,19 @@ xgb_grid = expand.grid(
 )
 
 
-maeParams <- apply(xgb_grid,1,function(params) {
-  etaparam <- params[["eta"]]
-  maxdepparam <- params[["max_depth"]]
+xgb_list <- split(xgb_grid,seq(nrow(xgb_grid)))
+
+maeParams <- mclapply(xgb_list,function(params) {
+  etaparam <- params$eta
+  maxdepparam <- params$max_depth
+  
   
   ## Train the model
-  xgb.model <- xgb.cv(data=dx,
+  xgb.model <- xgboost::xgb.cv(data=dx,
                       eta=etaparam,
                       max_depth=maxdepparam,
                       objective='reg:linear',
-                      nrounds=2000,
+                      nrounds=200,
                       nfold=10,
                       early.stop.round = 20,
                       feval=eval_mae,
@@ -81,7 +91,10 @@ maeParams <- apply(xgb_grid,1,function(params) {
   best.n <- min(which(xgb.model$test.error.mean<=test.cv))
   
   return(c(test.cv, best.n, maxdepparam, etaparam))
-})
+},mc.cores=2)
+
+maeParams <- data.frame(matrix(unlist(maeParams),nrow=length(maeParams),byrow=T))
+save(maeParams,'../data/maeParams')
 
 ## find model with best params
 index <- which(maeParams[1,]==min(maeParams[1,]))
@@ -95,6 +108,10 @@ opt.model <- xgb.train(data=dx,
                        objective='reg:linear',
                        nrounds=opt.n)
 
+load('../data/test')
+dtest <- xgb.DMatrix(as.matrix(test))
+
+
 ## Predict for test set
 yhat <- predict(opt.model,dtest)
 yhat <- exp(yhat)-200
@@ -105,3 +122,6 @@ submission <- fread(submission_file,colClasses=c("integer","numeric"))
 submission$loss <- yhat
 
 write.csv(submission,"../output/xgb.csv",row.names=FALSE)
+
+elapsed <- proc.time() - starttime
+elapsed
