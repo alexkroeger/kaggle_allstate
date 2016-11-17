@@ -16,9 +16,6 @@ sudo apt-get -y install libcurl4-gnutls-dev
 mkdir data
 mkdir data/Rpackages
 
-#Clone github repo
-git clone https://github.com/alexkroeger/kaggle_allstate.git
-
 #Move R preference files
 mv kaggle_allstate/bin/.Renviron ./
 mv kaggle_allstate/bin/.Rprofile ./
