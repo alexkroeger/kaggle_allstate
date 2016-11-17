@@ -45,4 +45,4 @@ mkdir kaggle_allstate/output
 cd kaggle_allstate/bin
 
 #Run the script
-Rscript kaggle_allstate/bin/xgb.R
+Rscript xgb.R
