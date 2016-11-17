@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pass=$1
+
 #install R
 sudo sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
 
@@ -12,6 +14,12 @@ sudo apt-get -y install libssl-dev
 sudo apt-get -y build-dep libcurl4-gnutls-dev
 sudo apt-get -y install libcurl4-gnutls-dev
 
+#Install pip
+sudo apt install -y python-pip
+
+#Get Kaggle python client
+pip install kaggle-cli
+
 #Create landing area for R packages
 mkdir data
 mkdir data/Rpackages
@@ -22,6 +30,16 @@ mv kaggle_allstate/bin/.Rprofile ./
 
 #Install needed R packages
 Rscript kaggle_allstate/bin/install_packages.R
+
+#Download the data from Kaggle
+mkdir kaggle_allstate/data
+kg download -u alexrkroeger@gmail.com -p $pass -c allstate-claims-severity
+unzip sample_submission.csv.zip -d kaggle_allstate
+unzip train.csv.zip -d kaggle_allstate/data
+unzip test.csv.zip -d kaggle_allstate/data
+
+#Create output folder
+mkdir kaggle_allstate/output
 
 #Run the script
 Rscript kaggle_allstate/bin/xgb.R
