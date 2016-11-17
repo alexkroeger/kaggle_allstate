@@ -15,9 +15,8 @@ train <- fread("../data/train.csv")
 test <- fread("../data/test.csv")
 
 ## Uncomment for random sample
-#sample <- sample(1:nrow(train),1500)
-#train <- train[sample,]
-
+sample <- sample(1:nrow(train),1500)
+train <- train[sample,]
 
 ## response = loss
 ## Use log of the translated response
@@ -91,10 +90,10 @@ maeParams <- mclapply(xgb_list,function(params) {
   best.n <- min(which(xgb.model$test.error.mean<=test.cv))
   
   return(c(test.cv, best.n, maxdepparam, etaparam))
-},mc.cores=2)
+},mc.cores=1)
 
 maeParams <- data.frame(matrix(unlist(maeParams),nrow=length(maeParams),byrow=T))
-save(maeParams,'../data/maeParams')
+save(maeParams,file='../data/maeParams')
 
 ## find model with best params
 index <- which(maeParams[1,]==min(maeParams[1,]))
@@ -124,4 +123,4 @@ submission$loss <- yhat
 write.csv(submission,"../output/xgb.csv",row.names=FALSE)
 
 elapsed <- proc.time() - starttime
-elapsed
+print(elapsed)

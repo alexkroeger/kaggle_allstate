@@ -22,3 +22,6 @@ mv kaggle_allstate/bin/.Rprofile ./
 
 #Install needed R packages
 Rscript kaggle_allstate/bin/install_packages.R
+
+#Run the script
+Rscript kaggle_allstate/bin/xgb.R
