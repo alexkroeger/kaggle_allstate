@@ -4,8 +4,13 @@
 sudo sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
 
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
-sudo apt-get update
-sudo apt-get install r-base
+sudo apt-get -y update
+sudo apt-get -y install r-base
 
 #Install linux packages needed for devtools
-sudo apt-get install libssl-dev
+sudo apt-get -y install libssl-dev
+sudo apt-get -y build-dep libcurl4-gnutls-dev
+sudo apt-get -y install libcurl4-gnutls-dev
+
+#Install need R packages
+Rscript kaggle_allstate/bin/install_packages.R
