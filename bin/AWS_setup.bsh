@@ -41,5 +41,8 @@ unzip test.csv.zip -d kaggle_allstate/data
 #Create output folder
 mkdir kaggle_allstate/output
 
+#Navigate to bin to run script
+cd kaggle_allstate/bin
+
 #Run the script
 Rscript kaggle_allstate/bin/xgb.R
