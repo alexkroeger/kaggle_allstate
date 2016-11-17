@@ -12,5 +12,16 @@ sudo apt-get -y install libssl-dev
 sudo apt-get -y build-dep libcurl4-gnutls-dev
 sudo apt-get -y install libcurl4-gnutls-dev
 
-#Install need R packages
+#Create landing area for R packages
+mkdir data
+mkdir data/Rpackages
+
+#Clone github repo
+git clone https://github.com/alexkroeger/kaggle_allstate.git
+
+#Move R preference files
+mv kaggle_allstate/bin/.Renviron ./
+mv kaggle_allstate/bin/.Rprofile ./
+
+#Install needed R packages
 Rscript kaggle_allstate/bin/install_packages.R
