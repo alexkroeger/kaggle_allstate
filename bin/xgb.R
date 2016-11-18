@@ -93,7 +93,7 @@ maeParams <- mclapply(xgb_list,function(params) {
 },mc.cores=1)
 
 maeParams <- data.frame(matrix(unlist(maeParams),nrow=length(maeParams),byrow=T))
-save(maeParams,file='../data/maeParams')
+save(maeParams,file='../output/maeParams')
 
 ## find model with best params
 index <- which(maeParams[1,]==min(maeParams[1,]))
