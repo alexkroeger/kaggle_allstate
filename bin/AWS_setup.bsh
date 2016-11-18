@@ -3,7 +3,7 @@
 pass=$1
 secacckey=$2
 ftppass=$3
-#instid=$4
+instid=$4
 
 #install R
 sudo sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
@@ -56,6 +56,9 @@ cd kaggle_allstate/bin
 #Run the script
 Rscript xgb.R
 
+#Navigate to output
+cd ../output
+
 #Output results
 ftp -n f11-preview.biz.nf << EOF
 quote USER 2127082
@@ -68,4 +71,4 @@ quit
 EOF
 
 #Terminate Instance
-#aws ec2 terminate-instances --instance-ids $instid
+aws ec2 terminate-instances --instance-ids $instid
