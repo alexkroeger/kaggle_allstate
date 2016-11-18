@@ -66,18 +66,19 @@ xgb_grid = expand.grid(
 
 
 xgb_list <- split(xgb_grid,seq(nrow(xgb_grid)))
-
+running=1
 maeParams <- mclapply(xgb_list,function(params) {
   etaparam <- params$eta
   maxdepparam <- params$max_depth
   
+  write(running,file="../output/running.txt")
   
   ## Train the model
   xgb.model <- xgboost::xgb.cv(data=dx,
                       eta=etaparam,
                       max_depth=maxdepparam,
                       objective='reg:linear',
-                      nrounds=200,
+                      nrounds=2000,
                       nfold=10,
                       early.stop.round = 20,
                       feval=eval_mae,
@@ -91,6 +92,7 @@ maeParams <- mclapply(xgb_list,function(params) {
   
   return(c(test.cv, best.n, maxdepparam, etaparam))
 },mc.cores=4)
+
 
 maeParams <- data.frame(matrix(unlist(maeParams),nrow=length(maeParams),byrow=T))
 save(maeParams,file='../output/maeParams')
