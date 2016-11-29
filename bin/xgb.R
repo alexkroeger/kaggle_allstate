@@ -4,10 +4,8 @@ rm(list=ls())
 
 ## libs on libs
 library(parallel)
-library(parallelsugar)
 library(data.table)
 library(xgboost)
-
 
 
 ## Read in data
@@ -15,8 +13,8 @@ train <- fread("../data/train.csv")
 test <- fread("../data/test.csv")
 
 ## Uncomment for random sample
-sample <- sample(1:nrow(train),8000)
-train <- train[sample,]
+#sample <- sample(1:nrow(train),8000)
+#train <- train[sample,]
 
 ## response = loss
 ## Use log of the translated response
@@ -58,7 +56,7 @@ eval_mae <- function (yhat,dx) {
 }
 
 xgb_grid = expand.grid(
-  eta = seq(0.01, 0.02, 0.01),
+  eta = seq(0.01, 0.1, 0.01),
   max_depth = c(5, 6, 7)
 )
 
@@ -77,11 +75,12 @@ maeParams <- mclapply(xgb_list,function(params) {
                       eta=etaparam,
                       max_depth=maxdepparam,
                       objective='reg:linear',
-                      nrounds=200,
+                      nrounds=2000,
                       nfold=10,
                       early.stop.round = 200,
                       feval=eval_mae,
                       maximize=FALSE,
+                      nthread=1,
                       verbose=FALSE)
   
   ## to avoid overfitting, use lowest CV within x sd's of the minimum
@@ -91,7 +90,7 @@ maeParams <- mclapply(xgb_list,function(params) {
   best.n <- min(which(xgb.model$test.error.mean<=test.cv))
   
   return(c(test.cv, best.n, maxdepparam, etaparam))
-},mc.cores=1)
+},mc.cores=4)
 elapsed <- proc.time() - starttime
 print(elapsed)
 
@@ -104,6 +103,8 @@ index <- which(maeParams[1,]==min(maeParams[1,]))
 opt.n <- maeParams[2,index]
 opt.maxdep <- maeParams[3,index]
 opt.eta <- maeParams[4,index]
+
+dx <-xgb.DMatrix(as.matrix(x),label=y)
 
 opt.model <- xgb.train(data=dx,
                        eta=opt.eta,
