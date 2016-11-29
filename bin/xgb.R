@@ -8,15 +8,15 @@ library(parallelsugar)
 library(data.table)
 library(xgboost)
 
-starttime <- proc.time()
+
 
 ## Read in data
 train <- fread("../data/train.csv")
 test <- fread("../data/test.csv")
 
 ## Uncomment for random sample
-#sample <- sample(1:nrow(train),1500)
-#train <- train[sample,]
+sample <- sample(1:nrow(train),8000)
+train <- train[sample,]
 
 ## response = loss
 ## Use log of the translated response
@@ -45,8 +45,6 @@ for (p in predictors) {
 x <- data[1:trainset,]
 test <- data[(trainset+1):nrow(data),]
 
-dx <-xgb.DMatrix(as.matrix(x),label=y)
-
 save(test,file='../data/test')
 
 # Free up mem
@@ -60,29 +58,31 @@ eval_mae <- function (yhat,dx) {
 }
 
 xgb_grid = expand.grid(
-  eta = seq(0.01, 0.1, 0.01),
+  eta = seq(0.01, 0.02, 0.01),
   max_depth = c(5, 6, 7)
 )
 
 
 xgb_list <- split(xgb_grid,seq(nrow(xgb_grid)))
-running=1
+starttime <- proc.time()
 maeParams <- mclapply(xgb_list,function(params) {
   etaparam <- params$eta
   maxdepparam <- params$max_depth
   
-  write(running,file="../output/running.txt")
+  dx <-xgb.DMatrix(as.matrix(x),label=y)
   
+
   ## Train the model
   xgb.model <- xgboost::xgb.cv(data=dx,
                       eta=etaparam,
                       max_depth=maxdepparam,
                       objective='reg:linear',
-                      nrounds=2000,
+                      nrounds=200,
                       nfold=10,
-                      early.stop.round = 20,
+                      early.stop.round = 200,
                       feval=eval_mae,
-                      maximize=FALSE)
+                      maximize=FALSE,
+                      verbose=FALSE)
   
   ## to avoid overfitting, use lowest CV within x sd's of the minimum
   x = 0
@@ -91,7 +91,9 @@ maeParams <- mclapply(xgb_list,function(params) {
   best.n <- min(which(xgb.model$test.error.mean<=test.cv))
   
   return(c(test.cv, best.n, maxdepparam, etaparam))
-},mc.cores=4)
+},mc.cores=1)
+elapsed <- proc.time() - starttime
+print(elapsed)
 
 
 maeParams <- data.frame(matrix(unlist(maeParams),nrow=length(maeParams),byrow=T))
